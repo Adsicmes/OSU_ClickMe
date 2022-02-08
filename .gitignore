@@ -6,3 +6,5 @@
 *.pyc
 /download
 /data
+osudb_cache.db-journal
+.gitignore
