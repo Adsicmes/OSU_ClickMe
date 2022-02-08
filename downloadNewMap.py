@@ -1,7 +1,7 @@
 '''
 Author: Adsicmes
 Date: 2022-02-03 10:16:47
-LastEditTime: 2022-02-06 10:58:24
+LastEditTime: 2022-02-08 22:38:28
 LastEditors: Adsicmes
 Description: 对osu批量指定参数下载新的铺面
 FilePath: \OSU!_IF....ClickMe!\downloadNewMap.py
@@ -10,8 +10,10 @@ suggest_en: If you have some suggestions, welcome to send it to my mail.
 suggest_zh: 如果你对代码有好的建议，欢迎发送到我的邮箱.
 '''
 from json import dumps
-from re import I, compile
+from re import compile
 from sys import stdout
+from tkinter.ttk import Combobox
+from turtle import title
 from package.osu_db import OsuDB
 from package.osu_db import create_db as osu_db_export
 from package.osuDir import osuDirGet as osu_dir_get
@@ -27,62 +29,26 @@ from shutil import copy
 from os import remove
 from os import mkdir
 from contextlib import closing
+from tkinter.ttk import Separator
 
 
-__version__ = 1.2
+__version__ = 1.1
 
 
 """
 TODO: 添加：osusearch搜索源，更加详细的参数设定 url: https://osusearch.com/search/
-
-osusearch:
-https://osusearch.com/query/?
-
-title=1&
-artist=1&
-source=1&
-mapper=1&
-diff_name=1&
-
-genres=Novelty&
-languages=Instrumental,English&
-
-statuses=Unranked&
-
-modes=Standard,Mania&
-
-date_start=2022-01-30&
-date_end=2022-02-01&
-
-min_length=1&
-max_length=50424&
-
-min_bpm=54&
-max_bpm=28727&
-
-min_favorites=72&
-max_favorites=8378&
-
-min_play_count=783&
-max_play_count=782374523&
-
-star=(0.00,8.60)&
-ar=(5.50,10.00)&
-cs=(3.50,10.00)&
-hp=(0.00,7.60)&
-
-offset=0
+TODO: 添加: 血猫下载源，防止sayo炸掉
 """
 
 ILLEGAL_CHARS = compile(r"[\<\>:\"\/\\\|\?*]")  # 非法字符
 
 
 class bmset:
-    def __init__(self, title:str, artist:str, mapper:str, sid:int):
-        self.title:str = title
-        self.artist:str = artist
-        self.mapper:str = mapper
-        self.sid:int = sid
+    def __init__(self, title: str, artist: str, mapper: str, sid: int):
+        self.title: str = title
+        self.artist: str = artist
+        self.mapper: str = mapper
+        self.sid: int = sid
 
 
 class ProgressBar(object):
@@ -184,43 +150,43 @@ def user_input() -> int | dict:
     starsL.set("0")
 
     starsH = StringVar()
-    starsH.set("9999")
+    starsH.set("10")
 
     arL = StringVar()
     arL.set("0")
 
     arH = StringVar()
-    arH.set("9999")
+    arH.set("10")
 
     hpL = StringVar()
     hpL.set("0")
 
     hpH = StringVar()
-    hpH.set("9999")
+    hpH.set("10")
 
     odL = StringVar()
     odL.set("0")
 
     odH = StringVar()
-    odH.set("9999")
+    odH.set("10")
 
     csL = StringVar()
     csL.set("0")
 
     csH = StringVar()
-    csH.set("9999")
+    csH.set("10")
 
     bpmL = StringVar()
     bpmL.set("0")
 
     bpmH = StringVar()
-    bpmH.set("9999")
+    bpmH.set("10")
 
     lengthL = StringVar()
     lengthL.set("0")
 
     lengthH = StringVar()
-    lengthH.set("9999")
+    lengthH.set("10")
 
     entry_starsL = Entry(window, textvariable=starsL)
     entry_starsH = Entry(window, textvariable=starsH)
@@ -508,6 +474,7 @@ def user_input() -> int | dict:
     return int(dlCount.get()), postdata, dl
 """
 
+
 def get_existing_beatmaps() -> list:
     logger.info("导出osu!.db...该过程耗时长短取决于你的电脑性能和osu!.db的大小...")
     osu_dir = osu_dir_get()
@@ -517,6 +484,7 @@ def get_existing_beatmaps() -> list:
     logger.info("获取osu目前已经存在的铺面sid...")
     bmset = database.allBeatmapset()
     return bmset
+
 
 def get_mp_dl_ed() -> list:
     logger.info("读取已经下载过的sid...")
@@ -529,6 +497,7 @@ def get_mp_dl_ed() -> list:
         return bm_dl_ed
     except:
         return []
+
 
 """def scrape_beatmaps(dlcount: int, postdata: dict) -> list:
     sids = []
@@ -580,9 +549,10 @@ def get_mp_dl_ed() -> list:
         "K": sid,
         "T": 0
     }
-    resp = requests.get(url, params=param, verify=False).json()
+    resp = requests.get(url, headers=headers, params=param, verify=False).json()
     return resp
 """
+
 
 def downloadfile(url: str, save_path: str) -> None:
     with closing(requests.get(url, stream=True, verify=False)) as response:
@@ -598,41 +568,17 @@ def downloadfile(url: str, save_path: str) -> None:
 
 class InputWindow:
     def __init__(self) -> None:
-        messagebox.showinfo(title="注意！", message="温馨提示:\n"
-                            "1.没必要的地方可以不更改，只更改需要的地方\n"
-                            "2.搜索类型会默认为search, search下全功能可用\n"
-                            "3.搜索类型不为search则输入信息无效\n"
-                            "4.不要开代理！不要开代理！不要开代理！！！\n"
-                            "5.把控制台拉宽，不然进度条有时会不断刷新！\n"
-                            "6.窗口没了可能是在最下面，去任务栏找找吧！\n"
-                            "7.sayo和osusearch两个系统不同，同样的数据两家的返回可能不同\n\n"
-                            "关于搜索源选择:\n"
-                            "sayo在中国大陆速度快，但下载慢"
-                            "PS: 该窗口只是组织post数据发送请求铺面列表，\n"
-                            "    具体情况视你填写的参数和具体的返回")
-
         self.window_pack_row = 0
         self.window = Tk()
         self.window.title("Download Params Input")
-        self.pack_dl()
-        self.pack_search()
-        self.pack_diff()
 
     def pack_dl(self) -> None:
         self.dlCount = StringVar()
-        self.dlCount.set("200")
+        self.dlCount.set("50")
         label_dlCount = Label(self.window, text="下载量")
         entry_dlCount = Entry(self.window, textvariable=self.dlCount)
         label_dlCount.grid(row=self.window_pack_row, column=0)
         entry_dlCount.grid(row=self.window_pack_row, column=1)
-        self.window_pack_row += 1
-
-    def pack_search(self) -> None:
-        self.keyword = StringVar()
-        label_keyword = Label(self.window, text="搜索关键字")
-        entry_keyword = Entry(self.window, textvariable=self.keyword)
-        label_keyword.grid(row=self.window_pack_row, column=0)
-        entry_keyword.grid(row=self.window_pack_row, column=1)
         self.window_pack_row += 1
 
     def pack_diff(self) -> None:
@@ -652,46 +598,46 @@ class InputWindow:
         label_lengthH = Label(self.window, text="最高length")
 
         self.starsL = StringVar()
-        self.starsL.set("0")
+        # self.starsL.set("0")
 
         self.starsH = StringVar()
-        self.starsH.set("9999")
+        # self.starsH.set("10")
 
         self.arL = StringVar()
-        self.arL.set("0")
+        # self.arL.set("0")
 
         self.arH = StringVar()
-        self.arH.set("9999")
+        # self.arH.set("10")
 
         self.hpL = StringVar()
-        self.hpL.set("0")
+        # self.hpL.set("0")
 
         self.hpH = StringVar()
-        self.hpH.set("9999")
+        # self.hpH.set("10")
 
         self.odL = StringVar()
-        self.odL.set("0")
+        # self.odL.set("0")
 
         self.odH = StringVar()
-        self.odH.set("9999")
+        # self.odH.set("10")
 
         self.csL = StringVar()
-        self.csL.set("0")
+        # self.csL.set("0")
 
         self.csH = StringVar()
-        self.csH.set("9999")
+        # self.csH.set("10")
 
         self.bpmL = StringVar()
-        self.bpmL.set("0")
+        # self.bpmL.set("0")
 
         self.bpmH = StringVar()
-        self.bpmH.set("9999")
+        # self.bpmH.set("9999")
 
         self.lengthL = StringVar()
-        self.lengthL.set("0")
+        # self.lengthL.set("0")
 
         self.lengthH = StringVar()
-        self.lengthH.set("9999")
+        # self.lengthH.set("3600")
 
         entry_starsL = Entry(self.window, textvariable=self.starsL)
         entry_starsH = Entry(self.window, textvariable=self.starsH)
@@ -764,21 +710,604 @@ class InputWindow:
         self.window.mainloop()
 
 
+"""
+osusearch:
+https://osusearch.com/query/?
+
+title=1&
+artist=1&
+source=1&
+mapper=1&
+diff_name=1&
+
+genres=Novelty&
+languages=Instrumental,English&
+
+statuses=Unranked&
+
+modes=Standard,Mania&
+
+date_start=2022-01-30&
+date_end=2022-02-01&
+
+min_length=1&
+max_length=50424&
+
+min_bpm=54&
+max_bpm=28727&
+
+min_favorites=72&
+max_favorites=8378&
+
+min_play_count=783&
+max_play_count=782374523&
+
+query_order=difficulty&
+
+star=(0.00,8.60)&
+ar=(5.50,10.00)&
+cs=(3.50,10.00)&
+hp=(0.00,7.60)&
+
+offset=0
+"""
+
+
 class osusearch(InputWindow):
     def __init__(self) -> None:
         super(osusearch, self).__init__()
+        Sayobot.pack_dlType(self)
+        super().pack_dl()
+        self.pack_search()
+        super().pack_diff()
+        self.pack_others()
 
+        sep = Separator(self.window)
+        sep.grid(row=self.window_pack_row, column=0,
+                 padx=10, pady=10, columnspan=5)
+        self.window_pack_row += 1
 
-# TODO: 整合搜刮铺面
+        self.pack_mode()
+        self.pack_date()
+        self.pack_status()
+        self.pack_orders()
+
+        sep = Separator(self.window)
+        sep.grid(row=self.window_pack_row, column=0,
+                 padx=10, pady=10, columnspan=5)
+        self.window_pack_row += 1
+
+        self.pack_genres()
+        self.pack_languages()
+
+    def pack_search(self) -> None:
+        self.title = StringVar()
+        label_title = Label(self.window, text="↓↓↓ Song title ↓↓↓")
+        entry_title = Entry(self.window, textvariable=self.title)
+
+        self.artist = StringVar()
+        label_artist = Label(self.window, text="↓↓↓ Song artist ↓↓↓")
+        entry_artist = Entry(self.window, textvariable=self.artist)
+
+        self.source = StringVar()
+        label_source = Label(self.window, text="↓↓↓ Song source ↓↓↓")
+        entry_source = Entry(self.window, textvariable=self.source)
+
+        self.mapper = StringVar()
+        label_mapper = Label(self.window, text="↓↓↓ Song mapper ↓↓↓")
+        entry_mapper = Entry(self.window, textvariable=self.mapper)
+
+        self.diffname = StringVar()
+        label_diffname = Label(self.window, text="↓↓↓ Difficulty name ↓↓↓")
+        entry_diffname = Entry(self.window, textvariable=self.diffname)
+
+        label_title.grid(row=self.window_pack_row, column=0)
+        label_artist.grid(row=self.window_pack_row, column=1)
+        label_source.grid(row=self.window_pack_row, column=2)
+        label_mapper.grid(row=self.window_pack_row, column=3)
+        label_diffname.grid(row=self.window_pack_row, column=4)
+        self.window_pack_row += 1
+        entry_title.grid(row=self.window_pack_row, column=0)
+        entry_artist.grid(row=self.window_pack_row, column=1)
+        entry_source.grid(row=self.window_pack_row, column=2)
+        entry_mapper.grid(row=self.window_pack_row, column=3)
+        entry_diffname.grid(row=self.window_pack_row, column=4)
+        self.window_pack_row += 1
+
+    def pack_mode(self) -> None:
+        self.standard = IntVar()
+        standardSelection = Checkbutton(
+            self.window, text="std", variable=self.standard, onvalue=1, offvalue=0)
+        standardSelection.grid(row=self.window_pack_row, column=0)
+
+        self.mania = IntVar()
+        maniaSelection = Checkbutton(
+            self.window, text="mania", variable=self.mania, onvalue=1, offvalue=0)
+        maniaSelection.grid(row=self.window_pack_row, column=1)
+
+        self.taiko = IntVar()
+        taikoSelection = Checkbutton(
+            self.window, text="taiko", variable=self.taiko, onvalue=1, offvalue=0)
+        taikoSelection.grid(row=self.window_pack_row, column=2)
+
+        self.ctb = IntVar()
+        ctbSelection = Checkbutton(
+            self.window, text="ctb", variable=self.ctb, onvalue=1, offvalue=0)
+        ctbSelection.grid(row=self.window_pack_row, column=3)
+
+        self.window_pack_row += 1
+
+    def pack_status(self) -> None:
+        self.ranked = IntVar()
+        rankedSelection = Checkbutton(
+            self.window, text="Ranked", variable=self.ranked, onvalue=1, offvalue=0)
+        rankedSelection.grid(row=self.window_pack_row, column=0)
+
+        self.loved = IntVar()
+        lovedSelection = Checkbutton(
+            self.window, text="loved", variable=self.loved, onvalue=1, offvalue=0)
+        lovedSelection.grid(row=self.window_pack_row, column=1)
+
+        self.qualified = IntVar()
+        qualifiedSelection = Checkbutton(
+            self.window, text="qualified", variable=self.qualified, onvalue=1, offvalue=0)
+        qualifiedSelection.grid(row=self.window_pack_row, column=2)
+
+        self.unranked = IntVar()
+        unrankedSelection = Checkbutton(
+            self.window, text="unranked", variable=self.unranked, onvalue=1, offvalue=0)
+        unrankedSelection.grid(row=self.window_pack_row, column=3)
+
+        self.window_pack_row += 1
+
+    def pack_genres(self) -> None:
+        self.anime = IntVar()
+        animeSelection = Checkbutton(
+            self.window, text="anime", variable=self.anime, onvalue=1, offvalue=0)
+        animeSelection.grid(row=self.window_pack_row, column=0)
+
+        self.videogame = IntVar()
+        videogameSelection = Checkbutton(
+            self.window, text="videogame", variable=self.videogame, onvalue=1, offvalue=0)
+        videogameSelection.grid(row=self.window_pack_row, column=1)
+
+        self.novelty = IntVar()
+        noveltySelection = Checkbutton(
+            self.window, text="novelty", variable=self.novelty, onvalue=1, offvalue=0)
+        noveltySelection.grid(row=self.window_pack_row, column=2)
+
+        self.electronic = IntVar()
+        electronicSelection = Checkbutton(
+            self.window, text="electronic", variable=self.electronic, onvalue=1, offvalue=0)
+        electronicSelection.grid(row=self.window_pack_row, column=3)
+
+        self.pop = IntVar()
+        popSelection = Checkbutton(
+            self.window, text="pop", variable=self.pop, onvalue=1, offvalue=0)
+        popSelection.grid(row=self.window_pack_row, column=4)
+
+        self.window_pack_row += 1
+
+        self.rock = IntVar()
+        rockSelection = Checkbutton(
+            self.window, text="rock", variable=self.rock, onvalue=1, offvalue=0)
+        rockSelection.grid(row=self.window_pack_row, column=0)
+
+        self.hiphop = IntVar()
+        hiphopSelection = Checkbutton(
+            self.window, text="hip hop", variable=self.hiphop, onvalue=1, offvalue=0)
+        hiphopSelection.grid(row=self.window_pack_row, column=1)
+
+        self.other_genre = IntVar()
+        other_genreSelection = Checkbutton(
+            self.window, text="other", variable=self.other_genre, onvalue=1, offvalue=0)
+        other_genreSelection.grid(row=self.window_pack_row, column=2)
+
+        self.any_genre = IntVar()
+        any_genreSelection = Checkbutton(
+            self.window, text="any", variable=self.any_genre, onvalue=1, offvalue=0)
+        any_genreSelection.grid(row=self.window_pack_row, column=3)
+
+        self.window_pack_row += 1
+
+        sep = Separator(self.window)
+        sep.grid(row=self.window_pack_row, column=0,
+                 padx=10, pady=10, columnspan=5)
+
+        self.window_pack_row += 1
+
+    def pack_languages(self) -> None:
+        self.japanese = IntVar()
+        japaneseSelection = Checkbutton(
+            self.window, text="Japanese", variable=self.japanese, onvalue=1, offvalue=0)
+        japaneseSelection.grid(row=self.window_pack_row, column=0)
+
+        self.instrumental = IntVar()
+        instrumentalSelection = Checkbutton(
+            self.window, text="Instrumental", variable=self.japanese, onvalue=1, offvalue=0)
+        instrumentalSelection.grid(row=self.window_pack_row, column=1)
+
+        self.english = IntVar()
+        englishSelection = Checkbutton(
+            self.window, text="English", variable=self.english, onvalue=1, offvalue=0)
+        englishSelection.grid(row=self.window_pack_row, column=2)
+
+        self.korean = IntVar()
+        koreanSelection = Checkbutton(
+            self.window, text="Korean", variable=self.korean, onvalue=1, offvalue=0)
+        koreanSelection.grid(row=self.window_pack_row, column=3)
+
+        self.chinese = IntVar()
+        chineseSelection = Checkbutton(
+            self.window, text="Chinese", variable=self.chinese, onvalue=1, offvalue=0)
+        chineseSelection.grid(row=self.window_pack_row, column=4)
+
+        self.window_pack_row += 1
+
+        self.german = IntVar()
+        germanSelection = Checkbutton(
+            self.window, text="German", variable=self.german, onvalue=1, offvalue=0)
+        germanSelection.grid(row=self.window_pack_row, column=0)
+
+        self.spanish = IntVar()
+        spanishSelection = Checkbutton(
+            self.window, text="Spanish", variable=self.spanish, onvalue=1, offvalue=0
+        )
+        spanishSelection.grid(row=self.window_pack_row, column=1)
+
+        self.italian = IntVar()
+        italianSelection = Checkbutton(
+            self.window, text="Italian", variable=self.italian, onvalue=1, offvalue=0
+        )
+        italianSelection.grid(row=self.window_pack_row, column=2)
+
+        self.french = IntVar()
+        frenchSelection = Checkbutton(
+            self.window, text="French", variable=self.french, onvalue=1, offvalue=0
+        )
+        frenchSelection.grid(row=self.window_pack_row, column=3)
+
+        self.other_language = IntVar()
+        other_languageSelection = Checkbutton(
+            self.window, text="Other", variable=self.other_language, onvalue=1, offvalue=0
+        )
+        other_languageSelection.grid(row=self.window_pack_row, column=4)
+
+        self.window_pack_row += 1
+
+        self.any_language = IntVar()
+        any_languageSelection = Checkbutton(
+            self.window, text="Any", variable=self.any_language, onvalue=1, offvalue=0
+        )
+        any_languageSelection.grid(row=self.window_pack_row, column=0)
+
+        self.window_pack_row += 1
+
+        sep = Separator(self.window)
+        sep.grid(row=self.window_pack_row, column=0,
+                 padx=10, pady=10, columnspan=5)
+
+        self.window_pack_row += 1
+
+    def pack_date(self) -> None:
+        self.date_start = StringVar()
+        label_date_start = Label(self.window, text="Start date")
+        entry_date_start = Entry(self.window, textvariable=self.date_start)
+        label_date_start.grid(row=self.window_pack_row, column=0)
+        entry_date_start.grid(row=self.window_pack_row, column=1)
+
+        self.date_end = StringVar()
+        label_date_end = Label(self.window, text="End date")
+        entry_date_end = Entry(self.window, textvariable=self.date_end)
+        label_date_end.grid(row=self.window_pack_row, column=2)
+        entry_date_end.grid(row=self.window_pack_row, column=3)
+
+        label_date_info = Label(self.window, text="← eg:2020-1-30 格式必须相同")
+        label_date_info.grid(row=self.window_pack_row, column=4)
+
+        self.window_pack_row += 1
+
+    def pack_others(self) -> None:
+        self.favorites_min = StringVar()
+        label_favorites_min = Label(self.window, text="最小Favorites")
+        entry_favorites_min = Entry(
+            self.window, textvariable=self.favorites_min)
+        label_favorites_min.grid(row=self.window_pack_row, column=0)
+        entry_favorites_min.grid(row=self.window_pack_row, column=1)
+
+        self.favorites_max = StringVar()
+        label_favorites_max = Label(self.window, text="最大Favorites")
+        entry_favorites_max = Entry(
+            self.window, textvariable=self.favorites_max)
+        label_favorites_max.grid(row=self.window_pack_row, column=2)
+        entry_favorites_max.grid(row=self.window_pack_row, column=3)
+
+        self.window_pack_row += 1
+
+        self.play_count_min = StringVar()
+        label_play_count_min = Label(self.window, text="最小PlayCount")
+        entry_play_count_min = Entry(
+            self.window, textvariable=self.play_count_min)
+        label_play_count_min.grid(row=self.window_pack_row, column=0)
+        entry_play_count_min.grid(row=self.window_pack_row, column=1)
+
+        self.play_count_max = StringVar()
+        label_play_count_max = Label(self.window, text="最大PlayCount")
+        entry_play_count_max = Entry(
+            self.window, textvariable=self.play_count_max)
+        label_play_count_max.grid(row=self.window_pack_row, column=2)
+        entry_play_count_max.grid(row=self.window_pack_row, column=3)
+
+        self.window_pack_row += 1
+
+    def pack_orders(self) -> None:
+        self.orders = StringVar()
+        label_orders = Label(self.window, text="获取的排序方式")
+        label_orders.grid(row=self.window_pack_row, column=0)
+
+        combobox_orders = Combobox(self.window, textvariable=self.orders)
+        combobox_orders["value"] = ('date', 'star', 'favorites', 'length', 'play_count',
+                                    'difficulty_ar', 'difficulty_od', 'difficulty_cs', 'difficulty_hp', 'bpm')
+        combobox_orders.current(0)
+        combobox_orders.grid(row=self.window_pack_row, column=1)
+
+        self.reverse = IntVar()
+        reverseSelection = Checkbutton(
+            self.window, text="reverse", variable=self.reverse, onvalue=1, offvalue=0)
+        reverseSelection.grid(row=self.window_pack_row, column=2)
+
+        self.premium = IntVar()
+        premiumSelection = Checkbutton(
+            self.window, text="Premium mappers only", variable=self.premium, onvalue=1, offvalue=0)
+        premiumSelection.grid(row=self.window_pack_row, column=3)
+
+        self.window_pack_row += 1
+
+    def getmaps(self, bm: list, dlcount: int, param: dict) -> tuple:
+        headers = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.37 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.43',
+                   'Referer': 'https://osusearch.com/'}
+        logger.info("获取铺面列表...")
+        url = "https://osusearch.com/query/"
+        while dlcount >= 18:
+            old = len(bm)
+            offset = param["offset"]
+
+            logger.info(f"当前铺面列表获取偏移: {offset}")
+            logger.info(f"当前仍需下载的量: {dlcount}")
+
+            logger.info(f"向osusearch请求18铺面...")
+            resp = requests.get(url, headers=headers, params=param, verify=False)
+            resp = resp.json()
+
+            num = len(resp["beatmaps"])
+            if num < 18:
+                for i in resp["beatmaps"]:
+                    beatmap = bmset(i["title"], i["artist"],
+                                    i["mapper"], i["beatmapset"])
+                    bm.append(beatmap)
+
+                logger.warning(f"osusearch返回的图不够了!请求{dlcount},返回{num}")
+                sleep(1)
+                return bm, False
+
+            for i in resp["beatmaps"]:
+                beatmap = bmset(i["title"], i["artist"],
+                                i["mapper"], i["beatmapset"])
+                bm.append(beatmap)
+
+            param["offset"] += 1
+
+            bm = list(set(bm))
+            new = len(bm)
+
+            dlcount -= (new-old)
+        else:
+            if dlcount == 0:
+                logger.info("获取铺面列表完成")
+                return bm, False
+
+            offset = param["offset"]
+            logger.info(f"当前铺面列表获取偏移: {offset}")
+            logger.info(f"当前需要下载的量: {dlcount}")
+
+            logger.info(f"向osusearch请求{dlcount}铺面...")
+            resp = requests.get(url, headers=headers, data=param, verify=False).json()
+
+            num = len(resp["beatmaps"])
+            if num < dlcount:
+                for i in resp["beatmaps"]:
+                    beatmap = bmset(i["title"], i["artist"],
+                                    i["mapper"], i["beatmapset"])
+                    bm.append(beatmap)
+                logger.warning(f"osusearch返回的图不够了!请求{dlcount},返回{num}")
+                sleep(1)
+                return bm, False
+            else:
+                for j in range(dlcount):
+                    i = resp["beatmaps"][j]
+                    beatmap = bmset(i["title"], i["artist"],
+                                    i["mapper"], i["beatmapset"])
+                    bm.append(beatmap)
+            param["offset"] += 1
+        logger.info("获取铺面列表完成")
+        sleep(1)
+        return bm, param
+
+    # TODO: 忘记加复选框的参数了  补上！
+    def data_handler(self) -> None:
+        self.param = {
+            'offset': 0,
+            'title': self.title.get(),
+            'artist': self.artist.get(),
+            'source': self.source.get(),
+            'mapper': self.mapper.get(),
+            'diff_name': self.diffname.get(),
+            'date_start': self.date_start.get(),
+            'date_end': self.date_end.get(),
+            # 'min_length': float(self.lengthL.get()),
+            # 'max_length': float(self.lengthH.get()),
+            # 'min_bpm': float(self.bpmL.get()),
+            # 'max_bpm': float(self.bpmH.get()),
+            # 'min_favorites': int(self.favorites_min.get()),
+            # 'max_favorites': int(self.favorites_max.get()),
+            # 'min_play_count': int(self.play_count_min.get()),
+            # 'max_play_count': int(self.play_count_max.get())
+        }
+
+        for i in [
+            ['min_length', 'lengthL'],
+            ['max_length', 'lengthH'],
+            ['min_bpm', 'bpmL'],
+            ['max_bpm', 'bpmH'],
+            ['min_favorites', 'favorites_min'],
+            ['max_favorites', 'favorites_max'],
+            ['min_play_count', 'play_count_min'],
+            ['max_play_count', 'play_count_max']
+            ]:
+            if eval(f'self.{i[1]}.get()') == '':
+                continue
+            else:
+                self.param[i[0]] = eval(f'int(self.{i[1]}.get())')
+
+        for i in [
+            ['star', 'stars'],
+            ['ar', 'ar'],
+            ['od', 'od'],
+            ['cs', 'cs'],
+            ['hp', 'hp']
+            ]:
+            low = eval(f'self.{i[1]}L.get()')
+            high = eval(f'self.{i[1]}H.get()')
+
+            if low == '' and high == '':
+                continue
+            if low == '':
+                low = 0
+            if high == '':
+                high = 9999
+            self.param[i[0]] = f'({low}, {high})'
+
+        def genres() -> str:
+            l = []
+            for i in ['anime', 'novelty', 'electronic', 'pop', 'rock']:
+                if eval(f'self.{i}.get()') == 1:
+                    l.append(i.capitalize())
+            if self.videogame.get() == 1:
+                l.append('Video%20Game')
+            if self.hiphop.get() == 1:
+                l.append('Hip%20Hop')
+            if self.other_genre.get() == 1:
+                l.append('Other')
+            if self.any_genre.get() == 1:
+                l.append('Any')
+
+            s = ''
+            for i in l:
+                s += i
+                s += ','
+            s = s[:-1]
+            return s
+
+        self.param['genres'] = genres()
+
+        def languages() -> str:
+            l=[]
+            for i in ['japanese', 
+                      'instrumental', 
+                      'english', 
+                      'korean', 
+                      'chinese', 
+                      'german', 
+                      'spanish', 
+                      'italian',
+                      'french'
+                      ]:
+                if eval(f'self.{i}.get()') == 1:
+                    l.append(i.capitalize())
+            if self.other_language.get() == 1:
+                l.append['Other']
+            if self.any_language.get() == 1:
+                l.append['Any']
+            
+            s = ''
+            for i in l:
+                s += i
+                s += ','
+            s = s[:-1]
+            return s
+
+        self.param['languages'] = languages()
+
+        key_to_del = []
+        for key, value in self.param.items():
+            if value == '' or value == None or value == [] or value == ():
+                key_to_del.append(key)
+        for i in key_to_del:
+            del self.param[i]
+
+    def scrape_beatmaps(self) -> list[bmset]:
+        bm = []
+        total = int(self.dlCount.get())
+        exist_maps = get_existing_beatmaps()
+        logger.info(f'目前已存在{len(exist_maps)}套铺面')
+
+        bm_dl_ed = get_mp_dl_ed()
+
+        while len(bm) < total:
+            bm: list[bmset]
+            bm, pd = self.getmaps(bm, int(self.dlCount.get()), self.param)
+
+            n = 0
+            map_to_del = []
+            for i in bm:
+                if i.sid in exist_maps:
+                    logger.info(f"该铺面已存在: {i}")
+                    map_to_del.append(n)  # 添加的是索引
+                n += 1
+
+            n = 0
+            for i in bm:
+                if i.sid in bm_dl_ed:
+                    logger.info(f"该铺面已用该下载器下载过: {i}")
+                    map_to_del.append(n)
+                n += 1
+
+            map_to_del = list(set(map_to_del))
+
+            map_to_del.sort(reverse=True)  # 反向排序，从最后删，这样前边的索引就不会变了
+            for i in map_to_del:
+                bm.pop(i)
+
+            if not pd:
+                break
+
+        return bm
+
+    # @retry
+    def call_osusearch(self) -> None:
+        self.call_window()
+        self.data_handler()
+
 class Sayobot(InputWindow):
     def __init__(self) -> None:
         super(Sayobot, self).__init__()
 
+        super().pack_dl()
+        self.pack_search()
+        self.pack_subType()
+        super().pack_diff()
         self.pack_dlType()
         self.pack_mapType()
-        self.pack_subType()
         self.pack_mode()
         self.pack_status()
+
+    def pack_search(self) -> None:
+        self.keyword = StringVar()
+        label_keyword = Label(self.window, text="搜索关键字")
+        entry_keyword = Entry(self.window, textvariable=self.keyword)
+        label_keyword.grid(row=self.window_pack_row, column=0)
+        entry_keyword.grid(row=self.window_pack_row, column=1)
+        self.window_pack_row += 1
 
     def pack_dlType(self) -> None:
         self.dlType = IntVar()
@@ -1020,7 +1549,7 @@ class Sayobot(InputWindow):
         if self.keyword.get() != '':
             self.postdata["keyword"] = self.keyword.get()
 
-    @ retry
+    @retry
     def call_sayo(self) -> None:
         self.call_window()
         self.data_handler()
@@ -1042,19 +1571,25 @@ class Sayobot(InputWindow):
             num = len(resp["data"])
             if num < 300:
                 for i in resp["data"]:
-                    beatmap = bmset(i["title"], i["artist"], i["creator"], i["sid"])
+                    beatmap = bmset(i["title"], i["artist"],
+                                    i["creator"], i["sid"])
                     bm.append(beatmap)
 
                 logger.warning(f"小夜返回的图不够了!请求{dlcount},返回{num}")
                 return bm, False
 
             for i in resp["data"]:
-                beatmap = bmset(i["title"], i["artist"], i["creator"], i["sid"])
+                beatmap = bmset(i["title"], i["artist"],
+                                i["creator"], i["sid"])
                 bm.append(beatmap)
 
             postdata["offset"] = resp["endid"]
             dlcount -= 300
         else:
+            if dlcount == 0:
+                logger.info("获取铺面列表完成")
+                return bm, False
+            
             offset = postdata["offset"]
 
             logger.info(f"当前铺面列表获取偏移: {offset}")
@@ -1068,13 +1603,15 @@ class Sayobot(InputWindow):
             num = len(resp["data"])
             if num < dlcount:
                 for i in resp["data"]:
-                    beatmap = bmset(i["title"], i["artist"], i["creator"], i["sid"])
+                    beatmap = bmset(i["title"], i["artist"],
+                                    i["creator"], i["sid"])
                     bm.append(beatmap)
                 logger.warning(f"小夜返回的图不够了!请求{dlcount},返回{num}")
                 return bm, False
             else:
                 for i in resp["data"]:
-                    beatmap = bmset(i["title"], i["artist"], i["creator"], i["sid"])
+                    beatmap = bmset(i["title"], i["artist"],
+                                    i["creator"], i["sid"])
                     bm.append(beatmap)
             postdata["offset"] = resp["endid"]
         logger.info("获取铺面列表完成")
@@ -1089,7 +1626,7 @@ class Sayobot(InputWindow):
         bm_dl_ed = get_mp_dl_ed()
 
         while len(bm) < total:
-            bm:list[bmset]
+            bm: list[bmset]
             bm, pd = self.getmaps(bm, int(self.dlCount.get()), self.postdata)
 
             n = 0
@@ -1164,8 +1701,23 @@ def main_sayo() -> None:
     logger.info("程序运行完毕")
 
 
+def main_osusearch() -> None:
+    window = osusearch()
+
+    window.call_osusearch()
+
+    logger.info(f"要下载的数量: {window.dlCount.get()} ,要get的请求如下:\n{window.param}")
+    sleep(1)
+
+    bm:list[bmset] = window.scrape_beatmaps()
+    sids = [i.sid for i in bm]
+    logger.info(f"要下载的铺面sid如下:\n{sids}")
+    sleep(1)
+
+
 def main() -> None:
-    main_sayo()
+    # main_sayo()
+    main_osusearch()
 
 
 if __name__ == '__main__':
