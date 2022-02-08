@@ -1,7 +1,7 @@
 '''
 Author: Adsicmes
 Date: 2022-02-03 10:16:47
-LastEditTime: 2022-02-04 10:12:38
+LastEditTime: 2022-02-07 21:52:51
 LastEditors: Adsicmes
 Description: 批量指定参数删除osu的铺面文件
 FilePath: \OSU!_IF....ClickMe!\deleteMap.py
@@ -42,6 +42,7 @@ UPDATE_INFO = """
 
 """
 添加: 删除除了std外所有模式的图
+TODO: 添加：清理无用素材
 TODO: 添加: 删除指定mapper，artist的图
 TODO: 改善：异步运行解析
 TODO: 添加：删除带有重复文件(md5_hash)的文件夹，删小的
