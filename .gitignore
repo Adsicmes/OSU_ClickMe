@@ -7,4 +7,4 @@
 /download
 /data
 osudb_cache.db-journal
-.gitignore
+osudb_cache.db
