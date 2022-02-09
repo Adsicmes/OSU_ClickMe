@@ -1,7 +1,7 @@
 '''
 Author: Adsicmes
 Date: 2022-02-03 10:16:47
-LastEditTime: 2022-02-08 22:38:28
+LastEditTime: 2022-02-09 17:48:05
 LastEditors: Adsicmes
 Description: 对osu批量指定参数下载新的铺面
 FilePath: \OSU!_IF....ClickMe!\downloadNewMap.py
@@ -10,10 +10,10 @@ suggest_en: If you have some suggestions, welcome to send it to my mail.
 suggest_zh: 如果你对代码有好的建议，欢迎发送到我的邮箱.
 '''
 from json import dumps
-from re import compile
+from logging import exception
+from re import T, compile
 from sys import stdout
 from tkinter.ttk import Combobox
-from turtle import title
 from package.osu_db import OsuDB
 from package.osu_db import create_db as osu_db_export
 from package.osuDir import osuDirGet as osu_dir_get
@@ -30,14 +30,16 @@ from os import remove
 from os import mkdir
 from contextlib import closing
 from tkinter.ttk import Separator
+from configparser import ConfigParser
 
 
-__version__ = 1.1
-
+__version__ = 2.0
+__searchMirror__ = ['sayobot', 'osusearch']
+__downloadMirror__ = ['sayobot', 'chimu']  # chimu：血猫 chimu.moe
 
 """
-TODO: 添加：osusearch搜索源，更加详细的参数设定 url: https://osusearch.com/search/
-TODO: 添加: 血猫下载源，防止sayo炸掉
+添加：osusearch搜索源，更加详细的参数设定 url: https://osusearch.com/search/
+添加: 血猫下载源，防止sayo炸掉
 """
 
 ILLEGAL_CHARS = compile(r"[\<\>:\"\/\\\|\?*]")  # 非法字符
@@ -49,7 +51,6 @@ class bmset:
         self.artist: str = artist
         self.mapper: str = mapper
         self.sid: int = sid
-
 
 class ProgressBar(object):
 
@@ -98,381 +99,12 @@ def logconfig() -> None:
     logger.add(stdout, colorize=True, format=LOGURU_FORMAT)
     logger.add("log\log_{time}.log")
 
-
-"""@ retry
-def user_input() -> int | dict:
-    '''
-    description: 用户输入数据
-    param {*}
-    return {*}
-    '''
-    messagebox.showinfo(title="注意！", message="温馨提示:\n"
-                        "1.没必要的地方可以不更改，只更改需要的地方\n"
-                        "2.搜索类型会默认为search, search下全功能可用\n"
-                        "3.搜索类型不为search则输入信息无效\n"
-                        "4.不要开代理！不要开代理！不要开代理！！！\n"
-                        "5.把控制台拉宽，不然进度条会不断刷新！\n"
-                        "6.窗口没了可能是在最下面，去任务栏找找吧！\n\n"
-                        "PS: 该窗口只是组织post数据发送向sayo请求铺面列表，\n    "
-                        "具体返回视你填写的参数和sayo具体的返回")
-
-    window = Tk()  # 实例化tk
-
-    window.title("Download Params Input")
-    # window.geometry('500x100')
-
-    dlCount = StringVar()
-    dlCount.set("200")
-
-    keyword = StringVar()
-
-    label_dlCount = Label(window, text="下载量")
-    label_keyword = Label(window, text="搜索关键字")
-    entry_dlCount = Entry(window, textvariable=dlCount)
-    entry_keyword = Entry(window, textvariable=keyword)
-
-    label_starsL = Label(window, text="最低star")
-    label_starsH = Label(window, text="最高star")
-    label_arL = Label(window, text="最低ar")
-    label_arH = Label(window, text="最高ar")
-    label_hpL = Label(window, text="最低hp")
-    label_hpH = Label(window, text="最高hp")
-    label_odL = Label(window, text="最低od")
-    label_odH = Label(window, text="最高od")
-    label_csL = Label(window, text="最低cs")
-    label_csH = Label(window, text="最高cs")
-    label_bpmL = Label(window, text="最低bpm")
-    label_bpmH = Label(window, text="最高bpm")
-    label_lengthL = Label(window, text="最低length")
-    label_lengthH = Label(window, text="最高length")
-
-    starsL = StringVar()
-    starsL.set("0")
-
-    starsH = StringVar()
-    starsH.set("10")
-
-    arL = StringVar()
-    arL.set("0")
-
-    arH = StringVar()
-    arH.set("10")
-
-    hpL = StringVar()
-    hpL.set("0")
-
-    hpH = StringVar()
-    hpH.set("10")
-
-    odL = StringVar()
-    odL.set("0")
-
-    odH = StringVar()
-    odH.set("10")
-
-    csL = StringVar()
-    csL.set("0")
-
-    csH = StringVar()
-    csH.set("10")
-
-    bpmL = StringVar()
-    bpmL.set("0")
-
-    bpmH = StringVar()
-    bpmH.set("10")
-
-    lengthL = StringVar()
-    lengthL.set("0")
-
-    lengthH = StringVar()
-    lengthH.set("10")
-
-    entry_starsL = Entry(window, textvariable=starsL)
-    entry_starsH = Entry(window, textvariable=starsH)
-    entry_arL = Entry(window, textvariable=arL)
-    entry_arH = Entry(window, textvariable=arH)
-    entry_hpL = Entry(window, textvariable=hpL)
-    entry_hpH = Entry(window, textvariable=hpH)
-    entry_odL = Entry(window, textvariable=odL)
-    entry_odH = Entry(window, textvariable=odH)
-    entry_csL = Entry(window, textvariable=csL)
-    entry_csH = Entry(window, textvariable=csH)
-    entry_bpmL = Entry(window, textvariable=bpmL)
-    entry_bpmH = Entry(window, textvariable=bpmH)
-    entry_lengthL = Entry(window, textvariable=lengthL)
-    entry_lengthH = Entry(window, textvariable=lengthH)
-
-    label_dlCount.grid(row=0, column=0)
-    label_keyword.grid(row=2, column=0)
-
-    label_starsL.grid(row=3, column=0)
-    label_starsH.grid(row=3, column=2)
-    label_arL.grid(row=4, column=0)
-    label_arH.grid(row=4, column=2)
-    label_hpL.grid(row=5, column=0)
-    label_hpH.grid(row=5, column=2)
-    label_odL.grid(row=6, column=0)
-    label_odH.grid(row=6, column=2)
-    label_csL.grid(row=7, column=0)
-    label_csH.grid(row=7, column=2)
-    label_bpmL.grid(row=8, column=0)
-    label_bpmH.grid(row=8, column=2)
-    label_lengthL.grid(row=9, column=0)
-    label_lengthH.grid(row=9, column=2)
-
-    entry_dlCount.grid(row=0, column=1)
-    entry_keyword.grid(row=2, column=1)
-
-    entry_starsL.grid(row=3, column=1)
-    entry_starsH.grid(row=3, column=3)
-    entry_arL.grid(row=4, column=1)
-    entry_arH.grid(row=4, column=3)
-    entry_hpL.grid(row=5, column=1)
-    entry_hpH.grid(row=5, column=3)
-    entry_odL.grid(row=6, column=1)
-    entry_odH.grid(row=6, column=3)
-    entry_csL.grid(row=7, column=1)
-    entry_csH.grid(row=7, column=3)
-    entry_bpmL.grid(row=8, column=1)
-    entry_bpmH.grid(row=8, column=3)
-    entry_lengthL.grid(row=9, column=1)
-    entry_lengthH.grid(row=9, column=3)
-
-    dlType = IntVar()
-    dlType.set(1)
-
-    dlTypeSelect1 = Radiobutton(
-        window,
-        variable=dlType,
-        value=1,
-        text="full"
-    )
-    dlTypeSelect1.grid(row=0, column=2)
-
-    dlTypeSelect2 = Radiobutton(
-        window,
-        variable=dlType,
-        value=2,
-        text="novideo"
-    )
-    dlTypeSelect2.grid(row=0, column=3)
-
-    dlTypeSelect3 = Radiobutton(
-        window,
-        variable=dlType,
-        value=3,
-        text="mini"
-    )
-    dlTypeSelect3.grid(row=0, column=4)
-
-    mapType = IntVar()
-    mapType.set(4)
-
-    mapTypeSelect1 = Radiobutton(
-        window,
-        variable=mapType,
-        value=1,
-        text='hot'
-    )
-    mapTypeSelect1.grid(row=10, column=0)
-
-    mapTypeSelect2 = Radiobutton(
-        window,
-        variable=mapType,
-        value=2,
-        text='new'
-    )
-    mapTypeSelect2.grid(row=10, column=1)
-
-    mapTypeSelect3 = Radiobutton(
-        window,
-        variable=mapType,
-        value=3,
-        text='packs'
-    )
-    mapTypeSelect3.grid(row=10, column=2)
-
-    mapTypeSelect4 = Radiobutton(
-        window,
-        variable=mapType,
-        value=4,
-        text='search'
-    )
-    mapTypeSelect4.grid(row=10, column=3)
-
-    subType = IntVar()
-    subType.set(1)
-
-    subTypeSelect1 = Radiobutton(
-        window,
-        variable=subType,
-        value=1,
-        text='title/titleU'
-    )
-    subTypeSelect1.grid(row=1, column=0)
-
-    subTypeSelect2 = Radiobutton(
-        window,
-        variable=subType,
-        value=2,
-        text='artist/artistU'
-    )
-    subTypeSelect2.grid(row=1, column=1)
-
-    subTypeSelect3 = Radiobutton(
-        window,
-        variable=subType,
-        value=4,
-        text='creator'
-    )
-    subTypeSelect3.grid(row=1, column=2)
-
-    subTypeSelect4 = Radiobutton(
-        window,
-        variable=subType,
-        value=8,
-        text='version'
-    )
-    subTypeSelect4.grid(row=1, column=3)
-
-    subTypeSelect5 = Radiobutton(
-        window,
-        variable=subType,
-        value=16,
-        text='tags'
-    )
-    subTypeSelect5.grid(row=1, column=4)
-
-    subTypeSelect6 = Radiobutton(
-        window,
-        variable=subType,
-        value=32,
-        text='source'
-    )
-    subTypeSelect6.grid(row=1, column=5)
-
-    mode = IntVar()
-    mode.set(1)
-
-    modeSelect1 = Radiobutton(
-        window,
-        variable=mode,
-        value=1,
-        text='std'
-    )
-    modeSelect1.grid(row=11, column=0)
-
-    modeSelect2 = Radiobutton(
-        window,
-        variable=mode,
-        value=2,
-        text='taiko'
-    )
-    modeSelect2.grid(row=11, column=1)
-
-    modeSelect3 = Radiobutton(
-        window,
-        variable=mode,
-        value=4,
-        text='ctb'
-    )
-    modeSelect3.grid(row=11, column=2)
-
-    modeSelect4 = Radiobutton(
-        window,
-        variable=mode,
-        value=8,
-        text='mania'
-    )
-    modeSelect4.grid(row=11, column=3)
-
-    status = IntVar()
-    status.set(1)
-
-    statusSelect1 = Radiobutton(
-        window,
-        variable=status,
-        value=1,
-        text='Ranked & Approved'
-    )
-    statusSelect1.grid(row=12, column=0)
-
-    statusSelect2 = Radiobutton(
-        window,
-        variable=status,
-        value=2,
-        text='Qualified'
-    )
-    statusSelect2.grid(row=12, column=1)
-
-    statusSelect3 = Radiobutton(
-        window,
-        variable=status,
-        value=4,
-        text='Loved'
-    )
-    statusSelect3.grid(row=12, column=2)
-
-    statusSelect4 = Radiobutton(
-        window,
-        variable=status,
-        value=8,
-        text='Pending & WIP'
-    )
-    statusSelect4.grid(row=12, column=3)
-
-    statusSelect5 = Radiobutton(
-        window,
-        variable=status,
-        value=16,
-        text='Graveyard'
-    )
-    statusSelect5.grid(row=12, column=4)
-
-    postdata = {
-        'offset': 0,
-        'cmd': 'beatmaplist'
-    }
-
-    def oka(event):
-        window.destroy()
-
-    ok = Button(window, text="ok", width=10)
-    ok.grid(row=13, column=2)
-
-    ok.bind('<Button-1>', oka)
-
-    window.mainloop()
-
-    match dlType.get():
-        case 1: dl = "full"
-        case 2: dl = "novideo"
-        case 3: dl = "mini"
-
-    match int(mapType.get()):
-        case 1: postdata["type"] = "hot"
-        case 2: postdata["type"] = "now"
-        case 3: postdata["type"] = "packs"
-        case 4: postdata["type"] = "search"
-
-    if int(mapType.get()) == 4:
-        postdata["subType"] = int(mapType.get())
-        postdata["mode"] = int(mode.get())
-        postdata["class"] = int(status.get())
-        postdata["stars"] = [float(starsL.get()), float(starsH.get())]
-        postdata["ar"] = [float(arL.get()), float(arH.get())]
-        postdata["od"] = [float(odL.get()), float(odH.get())]
-        postdata["cs"] = [float(csL.get()), float(csH.get())]
-        postdata["hp"] = [float(hpL.get()), float(hpH.get())]
-        postdata["bpm"] = [float(bpmL.get()), float(bpmH.get())]
-        postdata["length"] = [float(lengthL.get()), float(lengthH.get())]
-
-    if keyword.get() != '':
-        postdata["keyword"] = keyword.get()
-
-    return int(dlCount.get()), postdata, dl
-"""
+def newdir() -> None:
+    for i in ['download', 'data']:
+        try:
+            mkdir(i)
+        except:
+            pass
 
 
 def get_existing_beatmaps() -> list:
@@ -499,72 +131,119 @@ def get_mp_dl_ed() -> list:
         return []
 
 
-"""def scrape_beatmaps(dlcount: int, postdata: dict) -> list:
-    sids = []
-    total = dlcount
-    exist_maps = get_existing_beatmaps()
-    logger.info(f"目前已存在{len(exist_maps)}套铺面")
-    logger.info("读取已经下载过的sid...")
-    try:
-        sids_dl_ed = []
-        with open("data/sids_have_downloaded.txt", 'r') as f:
-            sids_dl = f.readlines()
-            for i in sids_dl:
-                sids_dl_ed.append(int(i))
-    except:
-        pass
-    while len(sids) < total:
-        sids, postdata = getmaps(sids, dlcount, postdata)
-
-        n = 0
-        map_to_del = []
-        for i in sids:
-            if i in exist_maps:
-                logger.info(f"该铺面已存在: {i}")
-                map_to_del.append(n)  # 添加的是索引
-            n += 1
-
-        n = 0
-        for i in sids:
-            if i in sids_dl_ed:
-                logger.info(f"该铺面已用该下载器下载过: {i}")
-                map_to_del.append(n)
-            n += 1
-
-        map_to_del = list(set(map_to_del))
-
-        map_to_del.sort(reverse=True)  # 反向排序，从最后删，这样前边的索引就不会变了
-        for i in map_to_del:
-            sids.pop(i)
-
-        if not postdata:
-            break
-
-    return sids
-"""
-
-"""def map_detial(sid: int) -> dict:
-    url = "https://api.sayobot.cn/v2/beatmapinfo"
-    param = {
-        "K": sid,
-        "T": 0
-    }
-    resp = requests.get(url, headers=headers, params=param, verify=False).json()
-    return resp
-"""
-
-
-def downloadfile(url: str, save_path: str) -> None:
+def downloadfile(url: str, save_path: str) -> None | bool:
     with closing(requests.get(url, stream=True, verify=False)) as response:
-        chunk_size = 1024  # 单次请求最大值
-        content_size = int(response.headers['content-length'])  # 内容体总大小
-        progress = ProgressBar(save_path, total=content_size,
-                               unit="KB", chunk_size=chunk_size, run_status="正在下载", fin_status="下载完成")
-        with open(save_path, "wb") as file:
-            for data in response.iter_content(chunk_size=chunk_size):
-                file.write(data)
-                progress.refresh(count=len(data))
+        if response.status == 200:
+            chunk_size = 1024  # 单次请求最大值
+            content_size = int(response.headers['content-length'])  # 内容体总大小
+            progress = ProgressBar(save_path, total=content_size,
+                                unit="KB", chunk_size=chunk_size, run_status="正在下载", fin_status="下载完成")
+            with open(save_path, "wb") as file:
+                for data in response.iter_content(chunk_size=chunk_size):
+                    file.write(data)
+                    progress.refresh(count=len(data))
+        else:
+            return response.status
 
+def initSelection() -> tuple[str, str]:
+    window = Tk()
+    window.title("select")
+    try:
+        with open(r'data/selection', 'r') as f:
+            config = ConfigParser()
+            config.read_file(f)
+            conf = config['selection']
+    except IOError:
+        try:
+            with open(r'data/selection', 'w') as f:
+                f.write("[selection]\n"
+                        "search=sayobot\n"
+                        "download=sayobot")
+        except exception as e:
+            logger.error(e)
+    except Exception as e:
+        logger.error(e)
+
+    searchLabel = Label(window, text="Search源选择", height=3)
+    searchLabel.grid(row=0, column=0)
+
+    search = IntVar()
+    search.set(1)
+    searchSelect1 = Radiobutton(
+        window,
+        variable=search,
+        value=1,
+        text="sayobot",
+        height=3
+        )
+    searchSelect1.grid(row=1, column=0)
+    searchSelect2 = Radiobutton(
+        window,
+        variable=search,
+        value=2,
+        text="osusearch",
+        height=3
+    )
+    searchSelect2.grid(row=1, column=1)
+
+
+    searchLabel = Label(window, text="Download源选择", height=3)
+    searchLabel.grid(row=2, column=0)
+
+    download = IntVar()
+    download.set(1)
+    downloadSelect1 = Radiobutton(
+        window,
+        variable=download,
+        value=1,
+        text="sayobot",
+        height=3
+    )
+    downloadSelect1.grid(row=3, column=0)
+    downloadSelect2 = Radiobutton(
+        window,
+        variable=download,
+        value=2,
+        text="kitsu",
+        height=3
+    )
+    downloadSelect2.grid(row=3, column=1)
+    downloadSelect3 = Radiobutton(
+        window,
+        variable=download,
+        value=3,
+        text="Beatconnect"
+    )
+    downloadSelect3.grid(row=3, column=2)
+    downloadSelect4 = Radiobutton(
+        window,
+        variable=download,
+        value=4,
+        text="Chimu(Bloodcat)"
+    )
+    downloadSelect4.grid(row=3, column=3)
+
+
+    def oka(event):
+        window.destroy()
+
+    ok = Button(window, text="ok", width=13)
+    ok.grid(row=4, column=2)
+
+    ok.bind('<Button-1>', oka)
+    window.mainloop()
+
+    match search.get():
+        case 1:search = 'sayobot'
+        case 2:search = 'osusearch'
+
+    match download.get():
+        case 1:download = 'sayobot'
+        case 2:download = 'kitsu'
+        case 3:download = 'beatconnect'
+        case 4:download = 'chimu'
+
+    return search, download
 
 class InputWindow:
     def __init__(self) -> None:
@@ -752,10 +431,47 @@ hp=(0.00,7.60)&
 offset=0
 """
 
+def scrape_beatmaps(self):
+    bm = []
+    total = int(self.dlCount.get())
+    exist_maps = get_existing_beatmaps()
+    logger.info(f"目前已存在{len(exist_maps)}套铺面")
 
-class osusearch(InputWindow):
+    bm_dl_ed = get_mp_dl_ed()
+
+    while len(bm) < total:
+        bm: list[bmset]
+        bm, pd = self.getmaps(bm, int(self.dlCount.get()), self.postdata)
+
+        n = 0
+        map_to_del = []
+        for i in bm:
+            if i.sid in exist_maps:
+                logger.info(f"该铺面已存在: {i.sid} {i.artist}-{i.title}")
+                map_to_del.append(n)  # 添加的是索引
+            n += 1
+
+        n = 0
+        for i in bm:
+            if i.sid in bm_dl_ed:
+                logger.info(f"该铺面已用该下载器下载过: {i.sid} {i.artist}-{i.title}")
+                map_to_del.append(n)
+            n += 1
+
+        map_to_del = list(set(map_to_del))
+
+        map_to_del.sort(reverse=True)  # 反向排序，从最后删，这样前边的索引就不会变了
+        for i in map_to_del:
+            bm.pop(i)
+
+        if not pd:
+            break
+
+    return bm
+
+class Osusearch(InputWindow):
     def __init__(self) -> None:
-        super(osusearch, self).__init__()
+        super(Osusearch, self).__init__()
         Sayobot.pack_dlType(self)
         super().pack_dl()
         self.pack_search()
@@ -1101,6 +817,7 @@ class osusearch(InputWindow):
             new = len(bm)
 
             dlcount -= (new-old)
+            sleep(1)
         else:
             if dlcount == 0:
                 logger.info("获取铺面列表完成")
@@ -1111,7 +828,7 @@ class osusearch(InputWindow):
             logger.info(f"当前需要下载的量: {dlcount}")
 
             logger.info(f"向osusearch请求{dlcount}铺面...")
-            resp = requests.get(url, headers=headers, data=param, verify=False).json()
+            resp = requests.get(url, headers=headers, params=param, verify=False).json()
 
             num = len(resp["beatmaps"])
             if num < dlcount:
@@ -1133,9 +850,8 @@ class osusearch(InputWindow):
         sleep(1)
         return bm, param
 
-    # TODO: 忘记加复选框的参数了  补上！
     def data_handler(self) -> None:
-        self.param = {
+        self.postdata = {
             'offset': 0,
             'title': self.title.get(),
             'artist': self.artist.get(),
@@ -1167,7 +883,7 @@ class osusearch(InputWindow):
             if eval(f'self.{i[1]}.get()') == '':
                 continue
             else:
-                self.param[i[0]] = eval(f'int(self.{i[1]}.get())')
+                self.postdata[i[0]] = eval(f'int(self.{i[1]}.get())')
 
         for i in [
             ['star', 'stars'],
@@ -1185,21 +901,22 @@ class osusearch(InputWindow):
                 low = 0
             if high == '':
                 high = 9999
-            self.param[i[0]] = f'({low}, {high})'
+            self.postdata[i[0]] = f'({low}, {high})'
 
         def genres() -> str:
             l = []
-            for i in ['anime', 'novelty', 'electronic', 'pop', 'rock']:
-                if eval(f'self.{i}.get()') == 1:
-                    l.append(i.capitalize())
-            if self.videogame.get() == 1:
-                l.append('Video%20Game')
-            if self.hiphop.get() == 1:
-                l.append('Hip%20Hop')
-            if self.other_genre.get() == 1:
-                l.append('Other')
-            if self.any_genre.get() == 1:
-                l.append('Any')
+            for i in [[self.anime.get(), 'Anime'],
+                      [self.novelty.get(), 'Novelty'],
+                      [self.electronic.get(), 'Electronic'],
+                      [self.pop.get(), 'Pop'],
+                      [self.rock.get(), 'Rock'],
+                      [self.videogame.get(), 'Video%20Game'],
+                      [self.hiphop.get(), 'Hip%20hop'],
+                      [self.other_genre.get(), 'Other'],
+                      [self.any_genre.get(), 'Any']
+                      ]:
+                if i[0] == 1:
+                    l.append(i[1])
 
             s = ''
             for i in l:
@@ -1207,27 +924,22 @@ class osusearch(InputWindow):
                 s += ','
             s = s[:-1]
             return s
-
-        self.param['genres'] = genres()
+        self.postdata['genres'] = genres()
 
         def languages() -> str:
             l=[]
-            for i in ['japanese', 
-                      'instrumental', 
-                      'english', 
-                      'korean', 
-                      'chinese', 
-                      'german', 
-                      'spanish', 
-                      'italian',
-                      'french'
+            for i in [[self.japanese.get(), 'Japanese'], 
+                      [self.instrumental.get(), 'Instrumental'], 
+                      [self.english.get(), 'English'], 
+                      [self.korean.get(), 'Korean'], 
+                      [self.chinese.get(), 'Chinese'], 
+                      [self.german.get(), 'German'], 
+                      [self.spanish.get(), 'Spanish'], 
+                      [self.italian.get(), 'Italian'],
+                      [self.french.get(), 'French'],
                       ]:
-                if eval(f'self.{i}.get()') == 1:
-                    l.append(i.capitalize())
-            if self.other_language.get() == 1:
-                l.append['Other']
-            if self.any_language.get() == 1:
-                l.append['Any']
+                if i[0] == 1:
+                    l.append(i[1])
             
             s = ''
             for i in l:
@@ -1235,56 +947,39 @@ class osusearch(InputWindow):
                 s += ','
             s = s[:-1]
             return s
+        self.postdata['languages'] = languages()
 
-        self.param['languages'] = languages()
+        def map_status() -> str:
+            l=[]
+            for i in [[self.ranked.get(), 'Ranked'],
+                      [self.loved.get(), 'Loved'],
+                      [self.qualified.get(), 'Qualified'],
+                      [self.unranked.get(), 'Unranked']]:
+                if i[0] == 1:
+                    l.append(i[1])
+            return l
+        self.postdata['statuses'] = map_status()
+
+        def map_mode() -> str:
+            l=[]
+            for i in [[self.standard.get(), 'Standard'],
+                      [self.mania.get(), 'Mania'],
+                      [self.taiko.get(), 'Taiko'],
+                      [self.ctb.get(), 'CtB']]:
+                if i[0] == 1:
+                    l.append(i[1])
+            return l
+        self.postdata['modes'] = map_mode()
 
         key_to_del = []
-        for key, value in self.param.items():
+        for key, value in self.postdata.items():
             if value == '' or value == None or value == [] or value == ():
                 key_to_del.append(key)
         for i in key_to_del:
-            del self.param[i]
-
-    def scrape_beatmaps(self) -> list[bmset]:
-        bm = []
-        total = int(self.dlCount.get())
-        exist_maps = get_existing_beatmaps()
-        logger.info(f'目前已存在{len(exist_maps)}套铺面')
-
-        bm_dl_ed = get_mp_dl_ed()
-
-        while len(bm) < total:
-            bm: list[bmset]
-            bm, pd = self.getmaps(bm, int(self.dlCount.get()), self.param)
-
-            n = 0
-            map_to_del = []
-            for i in bm:
-                if i.sid in exist_maps:
-                    logger.info(f"该铺面已存在: {i}")
-                    map_to_del.append(n)  # 添加的是索引
-                n += 1
-
-            n = 0
-            for i in bm:
-                if i.sid in bm_dl_ed:
-                    logger.info(f"该铺面已用该下载器下载过: {i}")
-                    map_to_del.append(n)
-                n += 1
-
-            map_to_del = list(set(map_to_del))
-
-            map_to_del.sort(reverse=True)  # 反向排序，从最后删，这样前边的索引就不会变了
-            for i in map_to_del:
-                bm.pop(i)
-
-            if not pd:
-                break
-
-        return bm
+            del self.postdata[i]
 
     # @retry
-    def call_osusearch(self) -> None:
+    def call_out(self) -> None:
         self.call_window()
         self.data_handler()
 
@@ -1516,11 +1211,6 @@ class Sayobot(InputWindow):
             'cmd': 'beatmaplist',
         }
 
-        match self.dlType.get():
-            case 1: self.dlType = "full"
-            case 2: self.dlType = "novideo"
-            case 3: self.dlType = "mini"
-
         match int(self.mapType.get()):
             case 1: self.postdata["type"] = "hot"
             case 2: self.postdata["type"] = "now"
@@ -1531,26 +1221,47 @@ class Sayobot(InputWindow):
             self.postdata["subType"] = int(self.mapType.get())
             self.postdata["mode"] = int(self.mode.get())
             self.postdata["class"] = int(self.status.get())
-            self.postdata["stars"] = [
-                float(self.starsL.get()), float(self.starsH.get())]
-            self.postdata["ar"] = [
-                float(self.arL.get()), float(self.arH.get())]
-            self.postdata["od"] = [
-                float(self.odL.get()), float(self.odH.get())]
-            self.postdata["cs"] = [
-                float(self.csL.get()), float(self.csH.get())]
-            self.postdata["hp"] = [
-                float(self.hpL.get()), float(self.hpH.get())]
-            self.postdata["bpm"] = [
-                float(self.bpmL.get()), float(self.bpmH.get())]
-            self.postdata["length"] = [
-                float(self.lengthL.get()), float(self.lengthH.get())]
+            
+            for i in [
+            ['stars', 'stars'],
+            ['ar', 'ar'],
+            ['od', 'od'],
+            ['cs', 'cs'],
+            ['hp', 'hp'],
+            ['bpm', 'bpm'],
+            ['length', 'length']
+            ]:
+                low = eval(f'self.{i[1]}L.get()')
+                high = eval(f'self.{i[1]}H.get()')
+
+                if low == '' and high == '':
+                    continue
+                if low == '':
+                    low = 0
+                if high == '':
+                    high = 9999
+                self.postdata[i[0]] = f'({low}, {high})'
+            
+            # self.postdata["stars"] = [
+            #     float(self.starsL.get()), float(self.starsH.get())]
+            # self.postdata["ar"] = [
+            #     float(self.arL.get()), float(self.arH.get())]
+            # self.postdata["od"] = [
+            #     float(self.odL.get()), float(self.odH.get())]
+            # self.postdata["cs"] = [
+            #     float(self.csL.get()), float(self.csH.get())]
+            # self.postdata["hp"] = [
+            #     float(self.hpL.get()), float(self.hpH.get())]
+            # self.postdata["bpm"] = [
+            #     float(self.bpmL.get()), float(self.bpmH.get())]
+            # self.postdata["length"] = [
+            #     float(self.lengthL.get()), float(self.lengthH.get())]
 
         if self.keyword.get() != '':
             self.postdata["keyword"] = self.keyword.get()
 
-    @retry
-    def call_sayo(self) -> None:
+    # @retry
+    def call_out(self) -> None:
         self.call_window()
         self.data_handler()
 
@@ -1617,107 +1328,86 @@ class Sayobot(InputWindow):
         logger.info("获取铺面列表完成")
         return bm, postdata
 
-    def scrape_beatmaps(self):
-        bm = []
-        total = int(self.dlCount.get())
-        exist_maps = get_existing_beatmaps()
-        logger.info(f"目前已存在{len(exist_maps)}套铺面")
 
-        bm_dl_ed = get_mp_dl_ed()
+def download_sayobot(dlType, sid, filename, savepath):
+    url = f"https://dl.sayobot.cn/beatmaps/download/{dlType}/{sid}"
+    downloadfile(url, f"download\\{filename}")
+    copy(f"download\\{filename}", savepath)
+    remove(f"download\\{filename}")
 
-        while len(bm) < total:
-            bm: list[bmset]
-            bm, pd = self.getmaps(bm, int(self.dlCount.get()), self.postdata)
+def download_kitsu(dlType, sid, filename, savepath):
+    dlType
+    url = f"https://kitsu.moe/d/{sid}"
+    downloadfile(url, f"download\\{filename}")
+    copy(f"download\\{filename}", savepath)
+    remove(f"download\\{filename}")
 
-            n = 0
-            map_to_del = []
-            for i in bm:
-                if i.sid in exist_maps:
-                    logger.info(f"该铺面已存在: {i}")
-                    map_to_del.append(n)  # 添加的是索引
-                n += 1
+def download_beatconnect(dlType, sid, filename, savepath):
+    dlType
+    url = f"https://beatconnect.io/b/{sid}"
+    downloadfile(url, f"download\\{filename}")
+    copy(f"download\\{filename}", savepath)
+    remove(f"download\\{filename}")
 
-            n = 0
-            for i in bm:
-                if i.sid in bm_dl_ed:
-                    logger.info(f"该铺面已用该下载器下载过: {i}")
-                    map_to_del.append(n)
-                n += 1
+def download_chimu(dlType, sid, filename, savepath):
+    match dlType:
+        case 'full': dlType = 1
+        case 'novideo': dlType = 0
+        case 'mini': dlType = 0
+    url = f"https://api.chimu.moe/v1/download/{sid}?n={dlType}"
+    downloadfile(url, f"download\\{filename}")
+    copy(f"download\\{filename}", savepath)
+    remove(f"download\\{filename}")
 
-            map_to_del = list(set(map_to_del))
+def main() -> None:
+    searchmirror, downloadmirror = initSelection()
+    window = eval(f'{searchmirror.capitalize()}()')
 
-            map_to_del.sort(reverse=True)  # 反向排序，从最后删，这样前边的索引就不会变了
-            for i in map_to_del:
-                bm.pop(i)
-
-            if not pd:
-                break
-
-        return bm
-
-
-def main_sayo() -> None:
-    window = Sayobot()
-
-    window.call_sayo()
+    window.call_out()
     logger.info(f"要下载的数量: {window.dlCount} ,要post的请求如下:\n{window.postdata}")
     sleep(1)
 
-    bm = window.scrape_beatmaps()
+    bm = scrape_beatmaps(window)
     sids = [i.sid for i in bm]
     logger.info(f"要下载的铺面如下:\n{sids}")
     sleep(1)
 
-    try:
-        mkdir("download")
-    except:
-        pass
-
-    try:
-        mkdir("data")
-    except:
-        pass
+    newdir()
 
     logger.info("避免再次下载，添加sid至data文件夹下的sids_have_downloaded.txt ...")
     with open("data/sids_have_downloaded.txt", "a") as f:
         for i in sids:
             f.write(str(f"{i}\n"))
 
+    if type(window.dlType) == IntVar:
+        dlType = window.dlType.get()
+        match dlType:
+            case 1: dlType = "full"
+            case 2: dlType = "novideo"
+            case 3: dlType = "mini"
+    elif type(window.dlType) == str:
+        dlType = window.dlType
+    else:
+        dlType = 'full'
+
+    match dlType:
+        case 1: dlType = 'full'
+        case 2: dlType = 'novideo'
+        case 3: dlType = 'mini'
+
     for i in bm:
         # bm = map_detial(i)
         title, artist, creator = i.title, i.artist, i.mapper
         logger.info(f"正在下载{creator}作图的{artist}-{title}")
-        url = f"https://dl.sayobot.cn/beatmaps/download/{window.dlType}/{i.sid}"
         fn = ILLEGAL_CHARS.sub("_", f"{i.sid} {artist}-{title}.osz")
         savepath = f"{songs_dir_get()}\\{fn}"
         logger.info(f"下载复制到路径: {savepath}")
         # downloadfile(url, f"download\\{savepath}")
-        downloadfile(url, f"download\\{fn}")
-        copy(f"download\\{fn}", savepath)
-        remove(f"download\\{fn}")
+        eval(f"""download_{downloadmirror}("{dlType}", {i.sid}, "{fn}", "{savepath}")""")
         sleep(1)
 
     messagebox.showinfo(title="ok", message="下载完毕")
     logger.info("程序运行完毕")
-
-
-def main_osusearch() -> None:
-    window = osusearch()
-
-    window.call_osusearch()
-
-    logger.info(f"要下载的数量: {window.dlCount.get()} ,要get的请求如下:\n{window.param}")
-    sleep(1)
-
-    bm:list[bmset] = window.scrape_beatmaps()
-    sids = [i.sid for i in bm]
-    logger.info(f"要下载的铺面sid如下:\n{sids}")
-    sleep(1)
-
-
-def main() -> None:
-    # main_sayo()
-    main_osusearch()
 
 
 if __name__ == '__main__':
