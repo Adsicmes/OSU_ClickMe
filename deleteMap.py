@@ -22,6 +22,7 @@ from tkinter import *
 from retrying import retry
 import oppadc
 
+
 __version__ = 2.0
 
 OSUDIR = osuDirGet()

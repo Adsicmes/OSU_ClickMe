@@ -4,7 +4,7 @@ from getpass import getuser
 
 
 def osuDirGet():
-    """
+    """A
     通过注册表获取osu的目录
     最后结尾为双右斜杠  \ \ 
     :return: osu目录

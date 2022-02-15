@@ -1,7 +1,7 @@
 '''
 Author: Adsicmes
 Date: 2022-02-03 10:16:47
-LastEditTime: 2022-02-09 17:48:05
+LastEditTime: 2022-02-10 00:43:19
 LastEditors: Adsicmes
 Description: 对osu批量指定参数下载新的铺面
 FilePath: \OSU!_IF....ClickMe!\downloadNewMap.py
@@ -35,11 +35,12 @@ from configparser import ConfigParser
 
 __version__ = 2.0
 __searchMirror__ = ['sayobot', 'osusearch']
-__downloadMirror__ = ['sayobot', 'chimu']  # chimu：血猫 chimu.moe
+__downloadMirror__ = ['sayobot', 'chimu', 'kitsu', 'beatconnect']  # chimu：血猫 chimu.moe
 
 """
 添加：osusearch搜索源，更加详细的参数设定 url: https://osusearch.com/search/
 添加: 血猫下载源，防止sayo炸掉
+TODO: 记住选项
 """
 
 ILLEGAL_CHARS = compile(r"[\<\>:\"\/\\\|\?*]")  # 非法字符
@@ -133,7 +134,8 @@ def get_mp_dl_ed() -> list:
 
 def downloadfile(url: str, save_path: str) -> None | bool:
     with closing(requests.get(url, stream=True, verify=False)) as response:
-        if response.status == 200:
+        if response.status_code == 200:
+            response = response
             chunk_size = 1024  # 单次请求最大值
             content_size = int(response.headers['content-length'])  # 内容体总大小
             progress = ProgressBar(save_path, total=content_size,
@@ -143,19 +145,19 @@ def downloadfile(url: str, save_path: str) -> None | bool:
                     file.write(data)
                     progress.refresh(count=len(data))
         else:
-            return response.status
+            return response.status_code
 
 def initSelection() -> tuple[str, str]:
     window = Tk()
     window.title("select")
     try:
-        with open(r'data/selection', 'r') as f:
+        with open(r'data/selection.ini', 'r') as f:
             config = ConfigParser()
             config.read_file(f)
             conf = config['selection']
     except IOError:
         try:
-            with open(r'data/selection', 'w') as f:
+            with open(r'data/selection.ini', 'w') as f:
                 f.write("[selection]\n"
                         "search=sayobot\n"
                         "download=sayobot")
@@ -802,7 +804,9 @@ class Osusearch(InputWindow):
                                     i["mapper"], i["beatmapset"])
                     bm.append(beatmap)
 
-                logger.warning(f"osusearch返回的图不够了!请求{dlcount},返回{num}")
+# statuses=Ranked,Loved&modes=Standard&date_start=2012-01-01&date_end=2012-12-31&star=(6.00,10.00)&offset=0
+
+                logger.warning(f"osusearch返回的图不够了!请求18,返回{num}")
                 sleep(1)
                 return bm, False
 
@@ -900,7 +904,7 @@ class Osusearch(InputWindow):
             if low == '':
                 low = 0
             if high == '':
-                high = 9999
+                high = 10
             self.postdata[i[0]] = f'({low}, {high})'
 
         def genres() -> str:
@@ -957,7 +961,12 @@ class Osusearch(InputWindow):
                       [self.unranked.get(), 'Unranked']]:
                 if i[0] == 1:
                     l.append(i[1])
-            return l
+            s = ''
+            for i in l:
+                s += i
+                s += ','
+            s = s[:-1]
+            return s
         self.postdata['statuses'] = map_status()
 
         def map_mode() -> str:
@@ -968,7 +977,12 @@ class Osusearch(InputWindow):
                       [self.ctb.get(), 'CtB']]:
                 if i[0] == 1:
                     l.append(i[1])
-            return l
+            s = ''
+            for i in l:
+                s += i
+                s += ','
+            s = s[:-1]
+            return s
         self.postdata['modes'] = map_mode()
 
         key_to_del = []
@@ -1360,19 +1374,18 @@ def download_chimu(dlType, sid, filename, savepath):
     remove(f"download\\{filename}")
 
 def main() -> None:
+    newdir()
     searchmirror, downloadmirror = initSelection()
     window = eval(f'{searchmirror.capitalize()}()')
 
     window.call_out()
-    logger.info(f"要下载的数量: {window.dlCount} ,要post的请求如下:\n{window.postdata}")
+    logger.info(f"要下载的数量: {window.dlCount.get()} ,要post的请求如下:\n{window.postdata}")
     sleep(1)
 
     bm = scrape_beatmaps(window)
     sids = [i.sid for i in bm]
     logger.info(f"要下载的铺面如下:\n{sids}")
     sleep(1)
-
-    newdir()
 
     logger.info("避免再次下载，添加sid至data文件夹下的sids_have_downloaded.txt ...")
     with open("data/sids_have_downloaded.txt", "a") as f:
@@ -1403,7 +1416,7 @@ def main() -> None:
         savepath = f"{songs_dir_get()}\\{fn}"
         logger.info(f"下载复制到路径: {savepath}")
         # downloadfile(url, f"download\\{savepath}")
-        eval(f"""download_{downloadmirror}("{dlType}", {i.sid}, "{fn}", "{savepath}")""")
+        eval(f"""download_{downloadmirror}("{dlType}", {i.sid}, "{fn}", "{songs_dir_get()}")""")
         sleep(1)
 
     messagebox.showinfo(title="ok", message="下载完毕")
