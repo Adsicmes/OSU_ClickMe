@@ -88,6 +88,8 @@ def scrape_beatmaps(self):
         for i in map_to_del:
             bm.pop(i)
 
+        self.dlCount.set(len(map_to_del))
+
         if not pd:
             break
 
